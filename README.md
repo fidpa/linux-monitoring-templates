@@ -1,4 +1,4 @@
-# Monitoring Templates
+# Linux Monitoring Templates
 
 **Production-ready monitoring script templates with StateDirectory pattern**
 
