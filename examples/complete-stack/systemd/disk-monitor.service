@@ -1,0 +1,28 @@
+[Unit]
+Description=Disk Usage Monitor
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=monitoring
+Group=monitoring
+
+StateDirectory=disk-monitor
+StateDirectoryMode=0750
+
+ExecStart=/usr/local/bin/disk-monitor
+
+ReadWritePaths=/var/log /var/lib/node_exporter/textfile_collector
+
+NoNewPrivileges=true
+ProtectSystem=strict
+PrivateTmp=true
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=disk-monitor
+
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,123 @@
+# systemd Timer Template for Monitoring Services
+# Copyright (c) 2025-2026 Marc Allgeier (fidpa)
+# SPDX-License-Identifier: MIT
+# https://github.com/fidpa/monitoring-templates
+#
+# Triggers periodic execution of monitoring scripts.
+#
+# Usage:
+#   1. Copy to /etc/systemd/system/{{service_name}}.timer
+#   2. Replace placeholders: {{SERVICE_NAME}}, {{service_name}}, {{TIMER_SCHEDULE}}
+#   3. Run: systemctl daemon-reload && systemctl enable --now {{service_name}}.timer
+#
+# Placeholders:
+#   {{SERVICE_NAME}} - Human-readable service name (e.g., "Disk Monitor")
+#   {{service_name}} - systemd timer identifier (e.g., "disk-monitor")
+#   {{TIMER_SCHEDULE}} - OnCalendar schedule (e.g., "*:0/30" for every 30 minutes)
+#   {{RANDOMIZED_DELAY}} - Optional random delay in seconds (e.g., "60" for 0-60s)
+#
+# Documentation: https://github.com/fidpa/monitoring-templates
+# Version: 1.0.0
+# Created: 2026-01-03
+
+[Unit]
+Description={{SERVICE_NAME}} Timer
+Requires={{service_name}}.service
+
+[Timer]
+# ============================================================================
+# SCHEDULE
+# ============================================================================
+#
+# OnCalendar examples:
+#   *:0/15        - Every 15 minutes (at :00, :15, :30, :45)
+#   *:0/30        - Every 30 minutes (at :00, :30)
+#   hourly        - Every hour (at :00)
+#   daily         - Every day at 00:00
+#   *-*-* 04:00   - Every day at 04:00
+#   Mon *-*-* 09:00 - Every Monday at 09:00
+#
+# See: man systemd.time
+#
+OnCalendar={{TIMER_SCHEDULE}}
+
+# ============================================================================
+# PERSISTENCE
+# ============================================================================
+#
+# Persistent=true: If system was powered off during scheduled time,
+# run the service immediately on next boot
+#
+# Use for important monitoring (backups, critical checks)
+# Skip for non-critical frequent checks (reduces boot time)
+#
+Persistent=true
+
+# ============================================================================
+# RANDOMIZED DELAY (Optional)
+# ============================================================================
+#
+# RandomizedDelaySec adds 0-N seconds random delay to prevent thundering herd
+# Useful when multiple timers trigger at same time
+#
+# Examples:
+#   RandomizedDelaySec=60   - Add 0-60s random delay
+#   RandomizedDelaySec=300  - Add 0-5min random delay
+#
+# Comment out if not needed
+#
+# RandomizedDelaySec={{RANDOMIZED_DELAY}}
+
+# ============================================================================
+# ACCURACY (Optional)
+# ============================================================================
+#
+# AccuracySec defines timer precision (default: 1min)
+# Lower values = more precise but more wakeups (battery impact)
+#
+# Examples:
+#   AccuracySec=1s    - Precise timing (high CPU wakeup frequency)
+#   AccuracySec=1min  - Default (good balance)
+#   AccuracySec=5min  - Loose timing (battery-friendly)
+#
+# AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
+
+# ==============================================================================
+# VERIFICATION COMMANDS
+# ==============================================================================
+#
+# Check timer status:
+#   systemctl status {{service_name}}.timer
+#
+# List all timers:
+#   systemctl list-timers --all
+#
+# Show next run time:
+#   systemctl list-timers {{service_name}}.timer
+#
+# Check timer logs:
+#   journalctl -u {{service_name}}.timer
+#
+# Manual trigger (test without waiting):
+#   sudo systemctl start {{service_name}}.service
+#
+# ==============================================================================
+# COMMON TIMER SCHEDULES
+# ==============================================================================
+#
+# Every 15 minutes:     *:0/15
+# Every 30 minutes:     *:0/30
+# Every hour:           hourly
+# Every 4 hours:        0/4:00
+# Daily at 04:00:       *-*-* 04:00
+# Weekly on Monday:     Mon *-*-* 09:00
+# First of month:       *-*-01 04:00
+#
+# Combined schedules (multiple OnCalendar lines):
+#   OnCalendar=*-*-* 04:00
+#   OnCalendar=*-*-* 16:00
+#   → Runs at 04:00 and 16:00 every day
+#

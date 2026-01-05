@@ -1,0 +1,175 @@
+# systemd Monitoring Service Template - StateDirectory Pattern
+# Copyright (c) 2025-2026 Marc Allgeier (fidpa)
+# SPDX-License-Identifier: MIT
+# https://github.com/fidpa/monitoring-templates
+#
+# Production-ready template for monitoring services with StateDirectory pattern.
+#
+# CRITICAL: This template uses StateDirectory (persistent) for rate-limiting state
+# ⚠️  NEVER use RuntimeDirectory for rate-limiting - it's ephemeral (deleted after service ends)
+# ✅  ALWAYS use StateDirectory for rate-limiting - it's persistent (survives restarts)
+#
+# Usage:
+#   1. Copy to /etc/systemd/system/{{service_name}}.service
+#   2. Replace placeholders: {{service_name}}, {{EXEC_PATH}}, {{SERVICE_USER}}, etc.
+#   3. Run: systemctl daemon-reload && systemctl enable --now {{service_name}}.timer
+#
+# Placeholders:
+#   {{SERVICE_NAME}} - Human-readable service name (e.g., "Disk Monitor")
+#   {{service_name}} - systemd service identifier (e.g., "disk-monitor")
+#   {{EXEC_PATH}} - Full path to monitoring script
+#   {{SERVICE_USER}} - User to run as (e.g., "monitoring")
+#   {{SERVICE_GROUP}} - Group to run as (e.g., "monitoring")
+#   {{WORKING_DIR}} - Working directory (optional)
+#   {{DOC_URL}} - Documentation URL (optional)
+#
+# Documentation: https://github.com/fidpa/monitoring-templates/docs/STATEDIRECTORY_PATTERN.md
+# Version: 1.0.0
+# Created: 2026-01-03
+
+[Unit]
+Description={{SERVICE_NAME}}
+Documentation={{DOC_URL}}
+After=network-online.target
+Wants=network-online.target
+
+# Prevent restart loops
+StartLimitIntervalSec=600
+StartLimitBurst=3
+
+[Service]
+# Type=oneshot for timer-based monitoring (script runs and exits)
+Type=oneshot
+User={{SERVICE_USER}}
+Group={{SERVICE_GROUP}}
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+Environment="SERVICE_NAME={{service_name}}"
+
+# Working directory (optional)
+# WorkingDirectory={{WORKING_DIR}}
+
+# Main execution
+ExecStart={{EXEC_PATH}}
+
+# ============================================================================
+# STATE DIRECTORY - CRITICAL FOR RATE-LIMITING
+# ============================================================================
+#
+# StateDirectory creates /var/lib/{{service_name}}/ (persistent)
+# This is where rate-limiting timestamps are stored (last_alert_* files)
+#
+# ⚠️  WRONG Pattern:
+#     RuntimeDirectory={{service_name}}
+#     → Creates /run/{{service_name}}/ (tmpfs, ephemeral)
+#     → Deleted after service ends
+#     → Rate-limiting timestamps lost
+#     → Alert spam on every run
+#
+# ✅  CORRECT Pattern:
+#     StateDirectory={{service_name}}
+#     → Creates /var/lib/{{service_name}}/ (persistent)
+#     → Survives service restarts + reboots
+#     → Rate-limiting works as expected
+#
+StateDirectory={{service_name}}
+StateDirectoryMode=0750
+
+# ============================================================================
+# READ-WRITE PATHS
+# ============================================================================
+#
+# Monitoring scripts need write access to:
+# - Logs directory
+# - Prometheus metrics directory
+# - StateDirectory (auto-handled by systemd)
+#
+ReadWritePaths=/var/log /var/lib/node_exporter/textfile_collector
+
+# ============================================================================
+# SECURITY HARDENING
+# ============================================================================
+#
+# Security best practices for monitoring scripts
+#
+NoNewPrivileges=true
+ProtectSystem=strict
+PrivateTmp=true
+
+# Read-Only access to scripts (if needed)
+# ReadOnlyPaths={{WORKING_DIR}}
+
+# ============================================================================
+# LOGGING
+# ============================================================================
+#
+# Dual logging: journald + file (script handles file logging)
+#
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier={{service_name}}
+
+# ============================================================================
+# RESOURCE LIMITS (Optional)
+# ============================================================================
+#
+# Monitoring scripts should be lightweight
+#
+# MemoryMax=256M
+# CPUQuota=25%
+# TasksMax=10
+
+# ============================================================================
+# REMAINAFTEREXIT - MANDATORY FOR STATEDIRECTORY
+# ============================================================================
+#
+# RemainAfterExit=yes is MANDATORY for oneshot + StateDirectory services!
+#
+# Why?
+# - Keeps service as "active (exited)" after script finishes
+# - Prevents potential race conditions with StateDirectory cleanup
+# - Guarantees StateDirectory availability during entire service lifecycle
+#
+# Timer will reset service state for next run
+#
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+# ==============================================================================
+# VERIFICATION CHECKLIST
+# ==============================================================================
+#
+# [ ] systemctl daemon-reload (must succeed)
+# [ ] systemctl start {{service_name}}.service (check status)
+# [ ] systemctl status shows "active (exited)" NOT "inactive"
+# [ ] ls -la /var/lib/{{service_name}}/ (StateDirectory created?)
+# [ ] systemctl restart {{service_name}}.service (StateDirectory persists?)
+# [ ] journalctl -u {{service_name}}.service --since "5 minutes ago" (no errors?)
+#
+# ==============================================================================
+# COMMON PITFALLS
+# ==============================================================================
+#
+# 1. RuntimeDirectory instead of StateDirectory
+#    Symptom: Rate-limiting doesn't work after service restart
+#    Fix: Use StateDirectory={{service_name}}
+#
+# 2. Missing ReadWritePaths
+#    Symptom: "Read-only file system" errors
+#    Fix: Add all write paths to ReadWritePaths=
+#
+# 3. Wrong StateDirectoryMode
+#    Symptom: "Permission denied" when writing state files
+#    Fix: Use StateDirectoryMode=0750 (owner: rwx, group: r-x)
+#
+# 4. StateDirectory without User/Group match
+#    Symptom: State files owned by wrong user
+#    Fix: Ensure User/Group in service matches script's expected user
+#
+# 5. RemainAfterExit=no with StateDirectory
+#    Symptom: Potential race conditions, StateDirectory cleanup issues
+#    Fix: Always use RemainAfterExit=yes for oneshot + StateDirectory
+#
