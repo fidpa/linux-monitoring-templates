@@ -1,5 +1,10 @@
 # Linux Monitoring Templates
 
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Bash](https://img.shields.io/badge/Bash-4.0%2B-blue?logo=gnu-bash)
+![Python](https://img.shields.io/badge/Python-3.10%2B-yellow?logo=python)
+![Templates](https://img.shields.io/badge/Templates-10-orange)
+
 **Production-ready monitoring script templates with StateDirectory pattern**
 
 Stop reinventing the wheel. Start with battle-tested templates for system monitoring scripts with built-in rate-limiting, Prometheus integration, and systemd best practices.
