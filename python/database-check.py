@@ -10,7 +10,6 @@ Monitors database connectivity and basic health metrics.
 Features:
 - Connection testing
 - Query execution time monitoring
-- Smart rate-limiting
 - Prometheus metrics export
 
 Usage:
@@ -27,7 +26,7 @@ Environment Variables:
     DB_PASSWORD - Database password (optional)
 
 Documentation: https://github.com/fidpa/linux-monitoring-templates
-Version: 1.0.0
+Version: 1.0.1
 Created: 2026-01-03
 """
 

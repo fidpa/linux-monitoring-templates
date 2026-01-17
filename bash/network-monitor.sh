@@ -10,7 +10,6 @@
 # Features:
 # - Multiple target monitoring (DNS, Gateway, External)
 # - Packet loss detection
-# - Smart rate-limiting
 # - Prometheus metrics export
 #
 # Usage:
@@ -23,7 +22,7 @@
 #   PING_COUNT - Number of pings per target (default: 3)
 #
 # Documentation: https://github.com/fidpa/linux-monitoring-templates
-# Version: 1.0.0
+# Version: 1.0.1
 # Created: 2026-01-03
 
 set -uo pipefail

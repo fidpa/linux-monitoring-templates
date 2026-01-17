@@ -9,9 +9,7 @@
 #
 # Features:
 # - Configurable WARNING/CRITICAL thresholds
-# - Smart rate-limiting (default: 3 hours)
 # - Prometheus metrics export
-# - Recovery alerts
 #
 # Usage:
 #   ./disk-monitor.sh
@@ -25,7 +23,7 @@
 #   MOUNT_POINT - Mount point to monitor (default: /)
 #
 # Documentation: https://github.com/fidpa/linux-monitoring-templates
-# Version: 1.0.0
+# Version: 1.0.1
 # Created: 2026-01-03
 
 set -uo pipefail
@@ -91,7 +89,8 @@ export_metrics() {
     case "$status" in
         CRITICAL) status_value=2 ;;
         WARNING) status_value=1 ;;
-        *) status_value=0 ;;
+        OK) status_value=0 ;;
+        *) status_value=3 ;;  # UNKNOWN/ERROR
     esac
 
     cat > "$METRICS_FILE" <<EOF
@@ -99,7 +98,7 @@ export_metrics() {
 # TYPE disk_usage_percent gauge
 disk_usage_percent{mount="${MOUNT_POINT}"} ${usage}
 
-# HELP disk_monitor_status Disk monitor status (0=OK, 1=WARNING, 2=CRITICAL)
+# HELP disk_monitor_status Disk monitor status (0=OK, 1=WARNING, 2=CRITICAL, 3=UNKNOWN)
 # TYPE disk_monitor_status gauge
 disk_monitor_status ${status_value}
 EOF
@@ -112,9 +111,7 @@ main() {
     log "INFO" "Starting disk usage check for ${MOUNT_POINT}"
 
     local usage
-    usage=$(check_disk)
-
-    if [[ $? -ne 0 ]]; then
+    if ! usage=$(check_disk); then
         export_metrics 0 "ERROR"
         return 1
     fi

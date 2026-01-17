@@ -18,7 +18,7 @@
 #   3. Deploy with systemd service + timer
 #
 # Documentation: https://github.com/fidpa/linux-monitoring-templates/docs/SETUP.md
-# Version: 1.0.0
+# Version: 1.0.1
 # Created: 2026-01-03
 
 set -uo pipefail
@@ -114,6 +114,7 @@ state_compare() {
     # Find new issues
     for issue in "${current_arr[@]}"; do
         [[ -z "$issue" ]] && continue
+        # shellcheck disable=SC2076  # Intentional literal string match
         if [[ ! " ${previous_arr[*]} " =~ " ${issue} " ]]; then
             new_issues="${new_issues}${issue},"
         else
@@ -124,6 +125,7 @@ state_compare() {
     # Find recovered issues
     for issue in "${previous_arr[@]}"; do
         [[ -z "$issue" ]] && continue
+        # shellcheck disable=SC2076  # Intentional literal string match
         if [[ ! " ${current_arr[*]} " =~ " ${issue} " ]]; then
             recovered_issues="${recovered_issues}${issue},"
         fi
@@ -179,6 +181,7 @@ send_telegram_alert() {
         return 1
     fi
 
+    # shellcheck source=/dev/null  # Dynamic path, user-configurable
     source "$secrets_file"
 
     if [[ -z "${TELEGRAM_BOT_TOKEN:-}" ]] || [[ -z "${TELEGRAM_CHAT_ID:-}" ]]; then
@@ -208,7 +211,7 @@ send_smart_alert() {
 
     # Send new issues alert
     if [[ -n "$new_issues" ]] && should_send_alert "NEW"; then
-        local message="*New Issues Detected*\n\n${new_issues//,/\\n- }"
+        local message=$'*New Issues Detected*\n\n'"${new_issues//,/$'\n'- }"
         if send_telegram_alert "$message" "🔴"; then
             record_alert "NEW"
         fi
@@ -216,7 +219,7 @@ send_smart_alert() {
 
     # Send recovery alert (if enabled)
     if [[ "$ENABLE_RECOVERY_ALERTS" == "true" ]] && [[ -n "$recovered_issues" ]] && should_send_alert "RECOVERY"; then
-        local message="*Issues Resolved*\n\n${recovered_issues//,/\\n- }"
+        local message=$'*Issues Resolved*\n\n'"${recovered_issues//,/$'\n'- }"
         if send_telegram_alert "$message" "✅"; then
             record_alert "RECOVERY"
         fi
@@ -287,9 +290,7 @@ main() {
 
     # Check current system state
     local current_issues
-    current_issues=$(check_system)
-
-    if [[ $? -ne 0 ]]; then
+    if ! current_issues=$(check_system); then
         log_error "System check failed"
         export_metrics 2
         return 1

@@ -19,7 +19,7 @@ Usage:
     ./generic-monitor.py --verbose
 
 Documentation: https://github.com/fidpa/linux-monitoring-templates/docs/SETUP.md
-Version: 1.0.0
+Version: 1.0.1
 Created: 2026-01-03
 """
 

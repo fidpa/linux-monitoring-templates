@@ -1,7 +1,7 @@
 # systemd Monitoring Service Template - StateDirectory Pattern
 # Copyright (c) 2025-2026 Marc Allgeier (fidpa)
 # SPDX-License-Identifier: MIT
-# https://github.com/fidpa/monitoring-templates
+# https://github.com/fidpa/linux-monitoring-templates
 #
 # Production-ready template for monitoring services with StateDirectory pattern.
 #
@@ -23,8 +23,8 @@
 #   {{WORKING_DIR}} - Working directory (optional)
 #   {{DOC_URL}} - Documentation URL (optional)
 #
-# Documentation: https://github.com/fidpa/monitoring-templates/docs/STATEDIRECTORY_PATTERN.md
-# Version: 1.0.0
+# Documentation: https://github.com/fidpa/linux-monitoring-templates/docs/STATEDIRECTORY_PATTERN.md
+# Version: 1.0.1
 # Created: 2026-01-03
 
 [Unit]

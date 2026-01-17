@@ -229,17 +229,13 @@ journalctl -u disk-monitor.service --since "5 minutes ago"
 **4. Check StateDirectory:**
 ```bash
 ls -la /var/lib/disk-monitor/
-# Should show: last_alert_* files
+# Should show: Prometheus metrics files
 ```
 
-**5. Test rate-limiting:**
-```bash
-# First run (alert sent)
-sudo systemctl start disk-monitor.service
-
-# Second run (alert skipped - rate-limited)
-sudo systemctl start disk-monitor.service
-```
+> **Note**: Smart rate-limiting and alert deduplication with `last_alert_*` state files
+> are only implemented in `generic-monitor.sh`. The specialized monitors
+> (`disk-monitor`, `service-health-check`, `network-monitor`) export metrics only
+> and do not include built-in alerting or rate-limiting logic.
 
 ## Troubleshooting
 

@@ -11,7 +11,6 @@ Features:
 - HTTP status code validation
 - Response time monitoring
 - SSL certificate validation
-- Smart rate-limiting
 - Prometheus metrics export
 
 Usage:
@@ -25,7 +24,7 @@ Environment Variables:
     EXPECTED_STATUS - Expected HTTP status code (default: 200)
 
 Documentation: https://github.com/fidpa/linux-monitoring-templates
-Version: 1.0.0
+Version: 1.0.1
 Created: 2026-01-03
 """
 

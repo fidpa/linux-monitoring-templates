@@ -1,7 +1,7 @@
 # systemd Timer Template for Monitoring Services
 # Copyright (c) 2025-2026 Marc Allgeier (fidpa)
 # SPDX-License-Identifier: MIT
-# https://github.com/fidpa/monitoring-templates
+# https://github.com/fidpa/linux-monitoring-templates
 #
 # Triggers periodic execution of monitoring scripts.
 #
@@ -16,8 +16,8 @@
 #   {{TIMER_SCHEDULE}} - OnCalendar schedule (e.g., "*:0/30" for every 30 minutes)
 #   {{RANDOMIZED_DELAY}} - Optional random delay in seconds (e.g., "60" for 0-60s)
 #
-# Documentation: https://github.com/fidpa/monitoring-templates
-# Version: 1.0.0
+# Documentation: https://github.com/fidpa/linux-monitoring-templates
+# Version: 1.0.1
 # Created: 2026-01-03
 
 [Unit]

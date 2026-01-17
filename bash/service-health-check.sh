@@ -10,7 +10,6 @@
 # Features:
 # - Multiple service monitoring
 # - Failed unit detection
-# - Smart rate-limiting
 # - Prometheus metrics export
 #
 # Usage:
@@ -22,7 +21,7 @@
 #   MONITORED_SERVICES - Space-separated list of services to monitor
 #
 # Documentation: https://github.com/fidpa/linux-monitoring-templates
-# Version: 1.0.0
+# Version: 1.0.1
 # Created: 2026-01-03
 
 set -uo pipefail

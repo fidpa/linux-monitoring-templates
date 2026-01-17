@@ -24,7 +24,7 @@ Environment Variables:
     MEM_THRESHOLD - Memory threshold percentage (default: 80)
 
 Documentation: https://github.com/fidpa/linux-monitoring-templates
-Version: 1.0.0
+Version: 1.0.1
 Created: 2026-01-03
 """
 
