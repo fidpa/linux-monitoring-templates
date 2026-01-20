@@ -34,3 +34,6 @@ __pycache__/
 # Personal/marketing content
 REDDIT_POST.md
 LINKEDIN_POST.md
+
+# Nextcloud/Rclone symlinks
+*.rclonelink
