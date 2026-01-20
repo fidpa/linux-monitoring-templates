@@ -1,9 +1,12 @@
 # Linux Monitoring Templates
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![CI](https://github.com/fidpa/linux-monitoring-templates/actions/workflows/lint.yml/badge.svg)
 ![Bash](https://img.shields.io/badge/Bash-4.0%2B-blue?logo=gnu-bash)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-yellow?logo=python)
 ![Templates](https://img.shields.io/badge/Templates-10-orange)
+![GitHub Stars](https://img.shields.io/github/stars/fidpa/linux-monitoring-templates?style=social)
+![Last Commit](https://img.shields.io/github/last-commit/fidpa/linux-monitoring-templates)
 
 **Production-ready monitoring script templates with StateDirectory pattern**
 
