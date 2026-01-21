@@ -120,16 +120,16 @@ def export_metrics(data: dict) -> None:
         status_value = 2
 
     with open(METRICS_FILE, 'w') as f:
-        f.write(f"# HELP api_health_status API health status (0=OK, 1=WARNING, 2=CRITICAL)\n")
-        f.write(f"# TYPE api_health_status gauge\n")
+        f.write("# HELP api_health_status API health status (0=OK, 1=WARNING, 2=CRITICAL)\n")
+        f.write("# TYPE api_health_status gauge\n")
         f.write(f"api_health_status{{url=\"{API_URL}\"}} {status_value}\n\n")
 
-        f.write(f"# HELP api_response_time_seconds API response time\n")
-        f.write(f"# TYPE api_response_time_seconds gauge\n")
+        f.write("# HELP api_response_time_seconds API response time\n")
+        f.write("# TYPE api_response_time_seconds gauge\n")
         f.write(f"api_response_time_seconds{{url=\"{API_URL}\"}} {data['response_time']}\n\n")
 
-        f.write(f"# HELP api_http_status HTTP status code\n")
-        f.write(f"# TYPE api_http_status gauge\n")
+        f.write("# HELP api_http_status HTTP status code\n")
+        f.write("# TYPE api_http_status gauge\n")
         f.write(f"api_http_status{{url=\"{API_URL}\"}} {data['http_status']}\n")
 
     logger.info("Metrics exported")

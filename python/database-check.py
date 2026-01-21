@@ -151,16 +151,16 @@ def export_metrics(data: dict) -> None:
     status_value = 0 if data['status'] == 'OK' else 2
 
     with open(METRICS_FILE, 'w') as f:
-        f.write(f"# HELP database_connected Database connection status (1=connected, 0=disconnected)\n")
-        f.write(f"# TYPE database_connected gauge\n")
+        f.write("# HELP database_connected Database connection status (1=connected, 0=disconnected)\n")
+        f.write("# TYPE database_connected gauge\n")
         f.write(f"database_connected{{type=\"{DB_TYPE}\",host=\"{DB_HOST}\"}} {data['connected']}\n\n")
 
-        f.write(f"# HELP database_query_time_seconds Database query time\n")
-        f.write(f"# TYPE database_query_time_seconds gauge\n")
+        f.write("# HELP database_query_time_seconds Database query time\n")
+        f.write("# TYPE database_query_time_seconds gauge\n")
         f.write(f"database_query_time_seconds{{type=\"{DB_TYPE}\",host=\"{DB_HOST}\"}} {data['query_time']}\n\n")
 
-        f.write(f"# HELP database_health_status Database health status (0=OK, 2=CRITICAL)\n")
-        f.write(f"# TYPE database_health_status gauge\n")
+        f.write("# HELP database_health_status Database health status (0=OK, 2=CRITICAL)\n")
+        f.write("# TYPE database_health_status gauge\n")
         f.write(f"database_health_status{{type=\"{DB_TYPE}\",host=\"{DB_HOST}\"}} {status_value}\n")
 
     logger.info("Metrics exported")

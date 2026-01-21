@@ -22,8 +22,25 @@ jobs:
         run: |
           find examples -name "*.sh" -print0 | xargs -0 shellcheck --severity=error
 
+  ruff:
+    name: Ruff (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install and run Ruff
+        run: |
+          pip install ruff
+          ruff check python/
+
   syntax-check:
-    name: Bash Syntax
+    name: Syntax Validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -32,3 +49,12 @@ jobs:
       - name: Validate Bash syntax
         run: |
           find bash examples -name "*.sh" -print0 | xargs -0 -I {} bash -n {}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Python syntax
+        run: |
+          find python -name "*.py" -print0 | xargs -0 python -m py_compile

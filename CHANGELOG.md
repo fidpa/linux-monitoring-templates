@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-21
+
+### Added
+- **Python Linting in CI**: Ruff linting now validates all Python templates on push/PR
+- **Python Syntax Validation**: `py_compile` check added to CI pipeline
+
+### Fixed
+- **Python Templates**: Removed 17 unnecessary f-string prefixes (Ruff F541)
+  - `api-health-check.py`: 6 fixes in `export_metrics()`
+  - `database-check.py`: 6 fixes in `export_metrics()`
+  - `process-monitor.py`: 5 fixes in `export_metrics()`
+
+### Changed
+- **CI Pipeline**: `lint.yml` now runs 3 parallel jobs:
+  - ShellCheck (bash/, examples/)
+  - Ruff (python/)
+  - Syntax Validation (Bash + Python)
+
+### Technical Details
+- **Quality**: All templates pass ShellCheck, Ruff, and syntax validation
+- **CI/CD Coverage**: 100% of Bash AND Python scripts validated on every push
+
 ## [1.1.0] - 2026-01-21
 
 ### Added
@@ -89,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.2.0]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/fidpa/linux-monitoring-templates/releases/tag/v1.0.0

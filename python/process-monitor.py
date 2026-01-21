@@ -111,15 +111,15 @@ def export_metrics(data: dict) -> None:
 
     with open(METRICS_FILE, 'w') as f:
         f.write(f"# HELP process_count Number of {PROCESS_NAME} processes\n")
-        f.write(f"# TYPE process_count gauge\n")
+        f.write("# TYPE process_count gauge\n")
         f.write(f"process_count{{name=\"{PROCESS_NAME}\"}} {data['count']}\n\n")
 
-        f.write(f"# HELP process_cpu_percent Total CPU usage\n")
-        f.write(f"# TYPE process_cpu_percent gauge\n")
+        f.write("# HELP process_cpu_percent Total CPU usage\n")
+        f.write("# TYPE process_cpu_percent gauge\n")
         f.write(f"process_cpu_percent{{name=\"{PROCESS_NAME}\"}} {data['cpu']}\n\n")
 
-        f.write(f"# HELP process_memory_percent Total memory usage\n")
-        f.write(f"# TYPE process_memory_percent gauge\n")
+        f.write("# HELP process_memory_percent Total memory usage\n")
+        f.write("# TYPE process_memory_percent gauge\n")
         f.write(f"process_memory_percent{{name=\"{PROCESS_NAME}\"}} {data['memory']}\n")
 
     logger.info("Metrics exported")
