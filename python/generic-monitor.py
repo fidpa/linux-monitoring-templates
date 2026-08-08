@@ -18,8 +18,7 @@ Usage:
     ./generic-monitor.py --dry-run
     ./generic-monitor.py --verbose
 
-Documentation: https://github.com/fidpa/linux-monitoring-templates/docs/SETUP.md
-Version: 1.0.1
+Documentation: https://github.com/fidpa/linux-monitoring-templates/blob/main/docs/SETUP.md
 Created: 2026-01-03
 """
 
@@ -27,6 +26,7 @@ import logging
 import os
 import socket
 import sys
+import tempfile
 import time
 import urllib.parse
 import urllib.request
@@ -48,7 +48,7 @@ RECOVERY_THRESHOLD = int(os.getenv("RECOVERY_THRESHOLD", "50"))
 # ⚠️ NEVER use /run/ for STATE_DIR - it's ephemeral (tmpfs)!
 # ✅ ALWAYS use /var/lib/ for STATE_DIR - it's persistent
 STATE_DIR = Path(os.getenv("STATE_DIR", f"/var/lib/{SERVICE_NAME}"))
-METRICS_DIR = Path("/var/lib/node_exporter/textfile_collector")
+METRICS_DIR = Path(os.getenv("METRICS_DIR", "/var/lib/node_exporter/textfile_collector"))
 LOG_DIR = Path(os.getenv("LOG_DIR", "/var/log"))
 
 # Derived paths
@@ -219,13 +219,22 @@ def send_telegram_alert(message: str, emoji: str = "⚠️") -> bool:
 
 def export_prometheus_metrics(metrics_data: dict[str, Any]) -> None:
     """Export Prometheus metrics to textfile collector."""
+    # Prometheus export is opt-in: the textfile collector directory is created
+    # by the node_exporter setup, not by this script. No directory, no export.
     if not METRICS_DIR.exists():
         return
 
     try:
-        METRICS_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(METRICS_FILE, 'w') as f:
+        # Atomic write: build the file beside its target, then rename it into
+        # place. A direct write can be scraped half-finished; os.replace() cannot.
+        with tempfile.NamedTemporaryFile(
+            mode='w',
+            dir=METRICS_FILE.parent,
+            prefix=f'.{METRICS_FILE.name}.',
+            suffix='.tmp',
+            delete=False,
+        ) as f:
+            temp_path = f.name
             f.write(f"# HELP {SERVICE_NAME}_status Monitoring status (0=OK, 1=WARNING, 2=CRITICAL)\n")
             f.write(f"# TYPE {SERVICE_NAME}_status gauge\n")
             f.write(f"{SERVICE_NAME}_status {metrics_data.get('status', 0)}\n")
@@ -237,6 +246,9 @@ def export_prometheus_metrics(metrics_data: dict[str, Any]) -> None:
                     f.write(f"# TYPE {SERVICE_NAME}_{key} gauge\n")
                     f.write(f"{SERVICE_NAME}_{key} {value}\n")
                     f.write("\n")
+
+        os.chmod(temp_path, 0o644)
+        os.replace(temp_path, METRICS_FILE)
 
         logger.info(f"Prometheus metrics exported to {METRICS_FILE}")
 

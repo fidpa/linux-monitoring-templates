@@ -24,16 +24,17 @@ Environment Variables:
     MEM_THRESHOLD - Memory threshold percentage (default: 80)
 
 Documentation: https://github.com/fidpa/linux-monitoring-templates
-Version: 1.0.1
 Created: 2026-01-03
 """
 
 import logging
 import os
-import psutil
 import socket
 import sys
+import tempfile
 from pathlib import Path
+
+import psutil
 
 # Configuration
 SERVICE_NAME = os.getenv("SERVICE_NAME", "process-monitor")
@@ -45,7 +46,7 @@ MEM_THRESHOLD = int(os.getenv("MEM_THRESHOLD", "80"))
 # Paths
 STATE_DIR = Path(os.getenv("STATE_DIR", f"/var/lib/{SERVICE_NAME}"))
 LOG_DIR = Path(os.getenv("LOG_DIR", "/var/log"))
-METRICS_DIR = Path("/var/lib/node_exporter/textfile_collector")
+METRICS_DIR = Path(os.getenv("METRICS_DIR", "/var/lib/node_exporter/textfile_collector"))
 
 LOG_FILE = LOG_DIR / f"{SERVICE_NAME}.log"
 METRICS_FILE = METRICS_DIR / f"{SERVICE_NAME}.prom"
@@ -104,12 +105,21 @@ def check_process() -> dict:
 
 def export_metrics(data: dict) -> None:
     """Export Prometheus metrics."""
+    # Prometheus export is opt-in: the textfile collector directory is created
+    # by the node_exporter setup, not by this script. No directory, no export.
     if not METRICS_DIR.exists():
         return
 
-    METRICS_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(METRICS_FILE, 'w') as f:
+    # Atomic write: build the file beside its target, then rename it into
+    # place. A direct write can be scraped half-finished; os.replace() cannot.
+    with tempfile.NamedTemporaryFile(
+        mode='w',
+        dir=METRICS_FILE.parent,
+        prefix=f'.{METRICS_FILE.name}.',
+        suffix='.tmp',
+        delete=False,
+    ) as f:
+        temp_path = f.name
         f.write(f"# HELP process_count Number of {PROCESS_NAME} processes\n")
         f.write("# TYPE process_count gauge\n")
         f.write(f"process_count{{name=\"{PROCESS_NAME}\"}} {data['count']}\n\n")
@@ -121,6 +131,9 @@ def export_metrics(data: dict) -> None:
         f.write("# HELP process_memory_percent Total memory usage\n")
         f.write("# TYPE process_memory_percent gauge\n")
         f.write(f"process_memory_percent{{name=\"{PROCESS_NAME}\"}} {data['memory']}\n")
+
+    os.chmod(temp_path, 0o644)
+    os.replace(temp_path, METRICS_FILE)
 
     logger.info("Metrics exported")
 

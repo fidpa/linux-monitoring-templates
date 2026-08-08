@@ -24,6 +24,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.ruff_cache/
 
 # Temporary files
 /tmp/
@@ -31,9 +32,19 @@ __pycache__/
 # Build artifacts
 *.bak
 
+# Local configs (secrets)
+.env
+.env.*
+
 # Personal/marketing content
 REDDIT_POST.md
 LINKEDIN_POST.md
+TODO.md
+NOTES.md
+
+# Local tooling / assistant workspace
+.claude/
+CLAUDE.md
 
 # Nextcloud/Rclone symlinks
 *.rclonelink

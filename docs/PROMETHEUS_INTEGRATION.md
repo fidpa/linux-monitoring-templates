@@ -126,21 +126,28 @@ print(f"Metrics exported to {METRICS_FILE}")
 
 **Solution**: Write to temp file, then atomic rename.
 
+All templates in this repository do this. The snippets below are the pattern
+they use — copy them if you write your own exporter.
+
 ### Bash Atomic Write
 
 ```bash
 METRICS_FILE="/var/lib/node_exporter/textfile_collector/disk_monitor.prom"
 TEMP_FILE="${METRICS_FILE}.$$"
 
-# Write to temp file
+# Write to temp file (same directory, so the rename stays on one filesystem)
 cat > "$TEMP_FILE" <<EOF
 # HELP disk_usage_percent Disk usage percentage
 # TYPE disk_usage_percent gauge
 disk_usage_percent{mount="/"} ${usage}
 EOF
 
+# Node Exporter runs as its own user and must be able to read the file.
+# mktemp-style defaults and a restrictive umask would leave it unreadable.
+chmod 644 "$TEMP_FILE"
+
 # Atomic rename (POSIX guarantees atomicity)
-mv "$TEMP_FILE" "$METRICS_FILE"
+mv -f "$TEMP_FILE" "$METRICS_FILE"
 ```
 
 ### Python Atomic Write
@@ -164,6 +171,10 @@ with tempfile.NamedTemporaryFile(
     f.write("# HELP disk_usage_percent Disk usage percentage\n")
     f.write("# TYPE disk_usage_percent gauge\n")
     f.write(f"disk_usage_percent{{mount=\"/\"}} {percent:.2f}\n")
+
+# NamedTemporaryFile creates the file with mode 600 — Node Exporter runs as
+# its own user and could not read it.
+os.chmod(temp_path, 0o644)
 
 # Atomic rename
 os.replace(temp_path, str(METRICS_FILE))
@@ -229,6 +240,21 @@ disk_monitor_status
 ```
 
 ## Troubleshooting
+
+**No `.prom` file is written at all, but the script exits 0:**
+
+Metrics export is **opt-in**. Every template skips it silently when
+`METRICS_DIR` does not exist, because the textfile collector directory belongs
+to the Node Exporter setup — a monitoring script should not create it on a host
+where Prometheus was never installed.
+
+```bash
+# Create it once, as part of the Node Exporter setup (see above)
+sudo mkdir -p /var/lib/node_exporter/textfile_collector
+
+# Or point the script somewhere else (all templates honour METRICS_DIR)
+METRICS_DIR=/tmp/metrics ./disk-monitor.sh
+```
 
 **Metrics not appearing in Prometheus:**
 ```bash

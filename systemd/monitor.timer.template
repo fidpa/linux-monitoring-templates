@@ -17,7 +17,6 @@
 #   {{RANDOMIZED_DELAY}} - Optional random delay in seconds (e.g., "60" for 0-60s)
 #
 # Documentation: https://github.com/fidpa/linux-monitoring-templates
-# Version: 1.0.1
 # Created: 2026-01-03
 
 [Unit]

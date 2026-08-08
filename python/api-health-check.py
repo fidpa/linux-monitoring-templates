@@ -24,7 +24,6 @@ Environment Variables:
     EXPECTED_STATUS - Expected HTTP status code (default: 200)
 
 Documentation: https://github.com/fidpa/linux-monitoring-templates
-Version: 1.0.1
 Created: 2026-01-03
 """
 
@@ -32,6 +31,7 @@ import logging
 import os
 import socket
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -46,7 +46,7 @@ EXPECTED_STATUS = int(os.getenv("EXPECTED_STATUS", "200"))
 # Paths
 STATE_DIR = Path(os.getenv("STATE_DIR", f"/var/lib/{SERVICE_NAME}"))
 LOG_DIR = Path(os.getenv("LOG_DIR", "/var/log"))
-METRICS_DIR = Path("/var/lib/node_exporter/textfile_collector")
+METRICS_DIR = Path(os.getenv("METRICS_DIR", "/var/lib/node_exporter/textfile_collector"))
 
 LOG_FILE = LOG_DIR / f"{SERVICE_NAME}.log"
 METRICS_FILE = METRICS_DIR / f"{SERVICE_NAME}.prom"
@@ -108,10 +108,10 @@ def check_api() -> dict:
 
 def export_metrics(data: dict) -> None:
     """Export Prometheus metrics."""
+    # Prometheus export is opt-in: the textfile collector directory is created
+    # by the node_exporter setup, not by this script. No directory, no export.
     if not METRICS_DIR.exists():
         return
-
-    METRICS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
     status_value = 0
     if data['status'] == 'WARNING':
@@ -119,7 +119,16 @@ def export_metrics(data: dict) -> None:
     elif data['status'] in ('CRITICAL', 'ERROR'):
         status_value = 2
 
-    with open(METRICS_FILE, 'w') as f:
+    # Atomic write: build the file beside its target, then rename it into
+    # place. A direct write can be scraped half-finished; os.replace() cannot.
+    with tempfile.NamedTemporaryFile(
+        mode='w',
+        dir=METRICS_FILE.parent,
+        prefix=f'.{METRICS_FILE.name}.',
+        suffix='.tmp',
+        delete=False,
+    ) as f:
+        temp_path = f.name
         f.write("# HELP api_health_status API health status (0=OK, 1=WARNING, 2=CRITICAL)\n")
         f.write("# TYPE api_health_status gauge\n")
         f.write(f"api_health_status{{url=\"{API_URL}\"}} {status_value}\n\n")
@@ -131,6 +140,9 @@ def export_metrics(data: dict) -> None:
         f.write("# HELP api_http_status HTTP status code\n")
         f.write("# TYPE api_http_status gauge\n")
         f.write(f"api_http_status{{url=\"{API_URL}\"}} {data['http_status']}\n")
+
+    os.chmod(temp_path, 0o644)
+    os.replace(temp_path, METRICS_FILE)
 
     logger.info("Metrics exported")
 

@@ -1,0 +1,11 @@
+[Unit]
+Description=Network Connectivity Monitor Timer
+Requires=network-monitor.service
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=false
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target

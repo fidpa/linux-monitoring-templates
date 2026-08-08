@@ -1,0 +1,29 @@
+[Unit]
+Description=Network Connectivity Monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=monitoring
+Group=monitoring
+
+StateDirectory=network-monitor
+StateDirectoryMode=0750
+
+ExecStart=/usr/local/bin/network-monitor
+
+ReadWritePaths=/var/log /var/lib/node_exporter/textfile_collector
+
+NoNewPrivileges=true
+ProtectSystem=strict
+PrivateTmp=true
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=network-monitor
+
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -22,7 +22,6 @@
 #   PING_COUNT - Number of pings per target (default: 3)
 #
 # Documentation: https://github.com/fidpa/linux-monitoring-templates
-# Version: 1.0.1
 # Created: 2026-01-03
 
 set -uo pipefail
@@ -43,7 +42,6 @@ readonly METRICS_FILE="${METRICS_DIR}/${SERVICE_NAME}.prom"
 
 # Create directories
 mkdir -p "$STATE_DIR" "$LOG_DIR"
-[[ -d "$METRICS_DIR" ]] && mkdir -p "$METRICS_DIR"
 
 # Logging
 log() {
@@ -78,9 +76,15 @@ export_metrics() {
     local reachable="$2"
     local unreachable="$3"
 
+    # Prometheus export is opt-in: the textfile collector directory is created
+    # by the node_exporter setup, not by this script. No directory, no export.
     [[ ! -d "$METRICS_DIR" ]] && return 0
 
-    cat > "$METRICS_FILE" <<EOF
+    # Atomic write: build the file beside its target, then rename it into place.
+    # A direct write can be scraped half-finished; POSIX rename() cannot.
+    local temp_file="${METRICS_FILE}.$$"
+
+    cat > "$temp_file" <<EOF
 # HELP network_targets_total Total monitored targets
 # TYPE network_targets_total gauge
 network_targets_total ${total}
@@ -93,6 +97,9 @@ network_targets_reachable ${reachable}
 # TYPE network_targets_unreachable gauge
 network_targets_unreachable ${unreachable}
 EOF
+
+    chmod 644 "$temp_file"
+    mv -f "$temp_file" "$METRICS_FILE"
 
     log "INFO" "Metrics exported: ${reachable}/${total} targets reachable"
 }

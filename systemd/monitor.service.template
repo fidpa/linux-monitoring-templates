@@ -23,8 +23,7 @@
 #   {{WORKING_DIR}} - Working directory (optional)
 #   {{DOC_URL}} - Documentation URL (optional)
 #
-# Documentation: https://github.com/fidpa/linux-monitoring-templates/docs/STATEDIRECTORY_PATTERN.md
-# Version: 1.0.1
+# Documentation: https://github.com/fidpa/linux-monitoring-templates/blob/main/docs/STATEDIRECTORY_PATTERN.md
 # Created: 2026-01-03
 
 [Unit]

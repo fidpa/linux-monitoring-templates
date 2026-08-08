@@ -1,0 +1,28 @@
+[Unit]
+Description=Service Health Check
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=monitoring
+Group=monitoring
+
+StateDirectory=service-health-check
+StateDirectoryMode=0750
+
+ExecStart=/usr/local/bin/service-health-check
+
+ReadWritePaths=/var/log /var/lib/node_exporter/textfile_collector
+
+NoNewPrivileges=true
+ProtectSystem=strict
+PrivateTmp=true
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=service-health-check
+
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

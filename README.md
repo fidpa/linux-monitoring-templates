@@ -122,6 +122,10 @@ CRITICAL_THRESHOLD=90
 # Paths (auto-configured via systemd)
 STATE_DIR=/var/lib/disk-monitor
 LOG_DIR=/var/log
+
+# Prometheus textfile collector (optional).
+# Metrics export is skipped silently while this directory does not exist.
+METRICS_DIR=/var/lib/node_exporter/textfile_collector
 ```
 
 ### Telegram Alerts (Optional)

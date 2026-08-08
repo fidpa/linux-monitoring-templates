@@ -17,8 +17,7 @@
 #   2. Customize SERVICE_NAME, DEVICE_NAME, and check logic
 #   3. Deploy with systemd service + timer
 #
-# Documentation: https://github.com/fidpa/linux-monitoring-templates/docs/SETUP.md
-# Version: 1.0.1
+# Documentation: https://github.com/fidpa/linux-monitoring-templates/blob/main/docs/SETUP.md
 # Created: 2026-01-03
 
 set -uo pipefail
@@ -50,7 +49,6 @@ readonly ENABLE_RECOVERY_ALERTS="${ENABLE_RECOVERY_ALERTS:-true}"
 
 # Create required directories
 mkdir -p "$STATE_DIR" "$LOG_DIR" "$(dirname "$LOCK_FILE")"
-[[ -d "$METRICS_DIR" ]] && mkdir -p "$METRICS_DIR"
 
 # ============================================================================
 # Logging Functions
@@ -75,7 +73,14 @@ log_error() { log_message "ERROR" "$@"; }
 # ============================================================================
 
 acquire_lock() {
-    exec 200>"$LOCK_FILE"
+    # Distinguish "cannot create the lock file" from "lock is held". Without
+    # this, an unwritable LOCK_DIR (the default /run needs root) is reported as
+    # "another instance is running" and sends you looking for a process that
+    # does not exist.
+    if ! exec 200>"$LOCK_FILE"; then
+        log_error "Cannot create lock file: ${LOCK_FILE} (set LOCK_DIR to a writable path)"
+        exit 1
+    fi
     if ! flock -n 200; then
         log_warn "Another instance is running (lock held)"
         exit 1
@@ -263,9 +268,15 @@ check_system() {
 export_metrics() {
     local status="$1"  # 0=OK, 1=WARNING, 2=CRITICAL
 
+    # Prometheus export is opt-in: the textfile collector directory is created
+    # by the node_exporter setup, not by this script. No directory, no export.
     [[ ! -d "$METRICS_DIR" ]] && return 0
 
-    cat > "$METRICS_FILE" <<EOF
+    # Atomic write: build the file beside its target, then rename it into place.
+    # A direct write can be scraped half-finished; POSIX rename() cannot.
+    local temp_file="${METRICS_FILE}.$$"
+
+    cat > "$temp_file" <<EOF
 # HELP ${SERVICE_NAME}_status Monitoring status (0=OK, 1=WARNING, 2=CRITICAL)
 # TYPE ${SERVICE_NAME}_status gauge
 ${SERVICE_NAME}_status ${status}
@@ -274,6 +285,9 @@ ${SERVICE_NAME}_status ${status}
 # TYPE ${SERVICE_NAME}_last_check_timestamp gauge
 ${SERVICE_NAME}_last_check_timestamp $(date +%s)
 EOF
+
+    chmod 644 "$temp_file"
+    mv -f "$temp_file" "$METRICS_FILE"
 
     log_info "Prometheus metrics exported to ${METRICS_FILE}"
 }

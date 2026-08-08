@@ -21,12 +21,11 @@ Environment Variables:
     DB_TYPE - Database type: postgresql, mysql, sqlite (default: sqlite)
     DB_HOST - Database host (default: localhost)
     DB_PORT - Database port (default: varies by DB_TYPE)
-    DB_NAME - Database name (default: test)
+    DB_NAME - Database name, or path to the SQLite file (default: test)
     DB_USER - Database user (optional)
     DB_PASSWORD - Database password (optional)
 
 Documentation: https://github.com/fidpa/linux-monitoring-templates
-Version: 1.0.1
 Created: 2026-01-03
 """
 
@@ -34,6 +33,7 @@ import logging
 import os
 import socket
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -49,7 +49,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 # Paths
 STATE_DIR = Path(os.getenv("STATE_DIR", f"/var/lib/{SERVICE_NAME}"))
 LOG_DIR = Path(os.getenv("LOG_DIR", "/var/log"))
-METRICS_DIR = Path("/var/lib/node_exporter/textfile_collector")
+METRICS_DIR = Path(os.getenv("METRICS_DIR", "/var/lib/node_exporter/textfile_collector"))
 
 LOG_FILE = LOG_DIR / f"{SERVICE_NAME}.log"
 METRICS_FILE = METRICS_DIR / f"{SERVICE_NAME}.prom"
@@ -75,7 +75,12 @@ def check_database() -> dict:
         if DB_TYPE == "sqlite":
             import sqlite3
             start = time.time()
-            conn = sqlite3.connect(DB_NAME, timeout=5)
+            # Read-only URI on purpose. A plain sqlite3.connect(DB_NAME) CREATES
+            # the file when it is missing -- the check would then report a
+            # healthy database it just invented, and leave a stray file in the
+            # working directory. Read-only mode fails instead, which is what a
+            # monitor is for.
+            conn = sqlite3.connect(f"file:{DB_NAME}?mode=ro", uri=True, timeout=5)
             cursor = conn.cursor()
             cursor.execute("SELECT 1")
             result = cursor.fetchone()
@@ -143,14 +148,23 @@ def check_database() -> dict:
 
 def export_metrics(data: dict) -> None:
     """Export Prometheus metrics."""
+    # Prometheus export is opt-in: the textfile collector directory is created
+    # by the node_exporter setup, not by this script. No directory, no export.
     if not METRICS_DIR.exists():
         return
 
-    METRICS_FILE.parent.mkdir(parents=True, exist_ok=True)
-
     status_value = 0 if data['status'] == 'OK' else 2
 
-    with open(METRICS_FILE, 'w') as f:
+    # Atomic write: build the file beside its target, then rename it into
+    # place. A direct write can be scraped half-finished; os.replace() cannot.
+    with tempfile.NamedTemporaryFile(
+        mode='w',
+        dir=METRICS_FILE.parent,
+        prefix=f'.{METRICS_FILE.name}.',
+        suffix='.tmp',
+        delete=False,
+    ) as f:
+        temp_path = f.name
         f.write("# HELP database_connected Database connection status (1=connected, 0=disconnected)\n")
         f.write("# TYPE database_connected gauge\n")
         f.write(f"database_connected{{type=\"{DB_TYPE}\",host=\"{DB_HOST}\"}} {data['connected']}\n\n")
@@ -162,6 +176,9 @@ def export_metrics(data: dict) -> None:
         f.write("# HELP database_health_status Database health status (0=OK, 2=CRITICAL)\n")
         f.write("# TYPE database_health_status gauge\n")
         f.write(f"database_health_status{{type=\"{DB_TYPE}\",host=\"{DB_HOST}\"}} {status_value}\n")
+
+    os.chmod(temp_path, 0o644)
+    os.replace(temp_path, METRICS_FILE)
 
     logger.info("Metrics exported")
 

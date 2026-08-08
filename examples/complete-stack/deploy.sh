@@ -6,12 +6,16 @@
 # Complete Stack Deployment Script
 #
 # Deploys a full monitoring stack with disk, service, and network monitoring.
+# The scripts come from the repository's bash/ templates -- this directory
+# holds no copies of them, only the systemd units that wire them up.
+#
+# Requires a full checkout of the repository (the templates are read from
+# ../../bash/), and must run as root.
 #
 # Usage:
-#   ./deploy.sh
+#   sudo ./deploy.sh
 #   ./deploy.sh --dry-run
 #
-# Version: 1.0.0
 # Created: 2026-01-03
 
 set -uo pipefail
@@ -28,10 +32,27 @@ echo ""
 INSTALL_USER="${INSTALL_USER:-monitoring}"
 INSTALL_GROUP="${INSTALL_GROUP:-monitoring}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-    echo "ERROR: This script must be run as root"
+# The monitors this stack deploys, taken straight from the repository's
+# templates. There is deliberately no second copy under examples/: until
+# v1.2.0 this directory carried its own disk-monitor.sh, which drifted three
+# releases behind the real template and lost rate-limiting and atomic writes
+# along the way.
+#
+# generic-monitor.sh is not listed on purpose -- it is a starting point to
+# customize, not a monitor with a meaning of its own.
+MONITORS=(
+    disk-monitor
+    service-health-check
+    network-monitor
+)
+
+# Check if running as root. --dry-run changes nothing, so it must not require
+# root -- otherwise the one mode meant for looking before you leap is the one
+# mode you cannot run.
+if [[ $EUID -ne 0 && "$DRY_RUN" == "false" ]]; then
+    echo "ERROR: This script must be run as root (or use --dry-run)"
     exit 1
 fi
 
@@ -46,15 +67,20 @@ fi
 # Deploy scripts
 echo ""
 echo "Deploying monitoring scripts..."
-for script in "$SCRIPT_DIR"/monitors/*.{sh,py}; do
-    [[ -f "$script" ]] || continue
-    filename=$(basename "$script")
-    target="/usr/local/bin/${filename%.*}"
+for monitor in "${MONITORS[@]}"; do
+    script="${REPO_ROOT}/bash/${monitor}.sh"
+    target="/usr/local/bin/${monitor}"
 
-    echo "  - $filename → $target"
+    if [[ ! -f "$script" ]]; then
+        echo "ERROR: Template not found: $script"
+        echo "       Run this script from a full checkout of the repository."
+        exit 1
+    fi
+
+    echo "  - bash/${monitor}.sh → $target"
     if [[ "$DRY_RUN" == "false" ]]; then
         cp "$script" "$target"
-        chmod +x "$target"
+        chmod 755 "$target"
         chown root:root "$target"
     fi
 done
@@ -101,13 +127,18 @@ echo "Deployment Summary"
 echo "========================================="
 
 if [[ "$DRY_RUN" == "false" ]]; then
+    # The names below are derived from MONITORS, not typed out a second time.
+    # The hardcoded list used to say "service-health" while the unit is called
+    # "service-health-check", so the summary reported nothing for it.
+    timer_pattern=$(IFS='|'; echo "${MONITORS[*]}")
+
     echo ""
     echo "Active Timers:"
-    systemctl list-timers --no-pager | grep -E "disk-monitor|service-health|network-monitor" || echo "  (none active)"
+    systemctl list-timers --no-pager | grep -E "$timer_pattern" || echo "  (none active)"
 
     echo ""
     echo "Service Status:"
-    for service in disk-monitor service-health network-monitor; do
+    for service in "${MONITORS[@]}"; do
         if systemctl is-enabled "${service}.timer" &>/dev/null; then
             status=$(systemctl is-active "${service}.timer" || echo "inactive")
             echo "  - ${service}.timer: $status"
@@ -116,7 +147,8 @@ if [[ "$DRY_RUN" == "false" ]]; then
 
     echo ""
     echo "StateDirectories:"
-    for dir in /var/lib/disk-monitor /var/lib/service-health /var/lib/network-monitor; do
+    for service in "${MONITORS[@]}"; do
+        dir="/var/lib/${service}"
         if [[ -d "$dir" ]]; then
             echo "  - $dir (exists)"
         else

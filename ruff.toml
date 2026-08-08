@@ -1,0 +1,19 @@
+# Ruff configuration for linux-monitoring-templates
+#
+# The rule set is pinned here on purpose. `lint.yml` installs Ruff unpinned,
+# and Ruff's default rule set has widened between releases: on 2026-08-08,
+# Ruff 0.16 reported 15 findings (EXE001, BLE001, I001) on a tree that had
+# not changed since v1.2.0, while the defaults in use at v1.2.0 accepted it.
+# Pinning the rules -- not the tool version -- keeps CI reproducible without
+# freezing the toolchain.
+#
+# EXE001 and BLE001 are deliberately not selected. These are monitoring
+# templates meant to be copied: they ship non-executable (users chmod +x after
+# copying), and broad `except Exception` handlers are intentional -- a monitor
+# that dies on an unexpected error is worse than one that logs it and reports
+# ERROR.
+
+target-version = "py310"
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I"]

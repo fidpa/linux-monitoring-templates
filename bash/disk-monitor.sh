@@ -23,7 +23,6 @@
 #   MOUNT_POINT - Mount point to monitor (default: /)
 #
 # Documentation: https://github.com/fidpa/linux-monitoring-templates
-# Version: 1.0.1
 # Created: 2026-01-03
 
 set -uo pipefail
@@ -45,7 +44,6 @@ readonly METRICS_FILE="${METRICS_DIR}/${SERVICE_NAME}.prom"
 
 # Create directories
 mkdir -p "$STATE_DIR" "$LOG_DIR"
-[[ -d "$METRICS_DIR" ]] && mkdir -p "$METRICS_DIR"
 
 # Logging
 log() {
@@ -83,6 +81,8 @@ export_metrics() {
     local usage="$1"
     local status="$2"
 
+    # Prometheus export is opt-in: the textfile collector directory is created
+    # by the node_exporter setup, not by this script. No directory, no export.
     [[ ! -d "$METRICS_DIR" ]] && return 0
 
     local status_value=0
@@ -93,7 +93,11 @@ export_metrics() {
         *) status_value=3 ;;  # UNKNOWN/ERROR
     esac
 
-    cat > "$METRICS_FILE" <<EOF
+    # Atomic write: build the file beside its target, then rename it into place.
+    # A direct write can be scraped half-finished; POSIX rename() cannot.
+    local temp_file="${METRICS_FILE}.$$"
+
+    cat > "$temp_file" <<EOF
 # HELP disk_usage_percent Disk usage percentage
 # TYPE disk_usage_percent gauge
 disk_usage_percent{mount="${MOUNT_POINT}"} ${usage}
@@ -102,6 +106,9 @@ disk_usage_percent{mount="${MOUNT_POINT}"} ${usage}
 # TYPE disk_monitor_status gauge
 disk_monitor_status ${status_value}
 EOF
+
+    chmod 644 "$temp_file"
+    mv -f "$temp_file" "$METRICS_FILE"
 
     log "INFO" "Metrics exported: ${MOUNT_POINT} at ${usage}%"
 }
