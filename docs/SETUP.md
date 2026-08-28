@@ -233,9 +233,11 @@ ls -la /var/lib/disk-monitor/
 ```
 
 > **Note**: Smart rate-limiting and alert deduplication with `last_alert_*` state files
-> are only implemented in `generic-monitor.sh`. The specialized monitors
-> (`disk-monitor`, `service-health-check`, `network-monitor`) export metrics only
-> and do not include built-in alerting or rate-limiting logic.
+> are only implemented in `generic-monitor.sh` and `generic-monitor.py`. All six
+> specialized monitors (`disk-monitor.sh`, `service-health-check.sh`,
+> `network-monitor.sh`, `process-monitor.py`, `api-health-check.py`,
+> `database-check.py`) export metrics only and do not include built-in alerting
+> or rate-limiting logic.
 
 ## Troubleshooting
 

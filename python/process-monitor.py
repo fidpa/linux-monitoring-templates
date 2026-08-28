@@ -5,12 +5,12 @@
 """
 Process Monitor
 
-Monitors process CPU/memory usage and sends alerts when thresholds are exceeded.
+Monitors process CPU/memory usage and exports the result as Prometheus metrics.
+Alerting is not built in, see generic-monitor.py.
 
 Features:
 - CPU and memory threshold monitoring
 - Process existence checks
-- Smart rate-limiting
 - Prometheus metrics export
 
 Usage:

@@ -10,18 +10,22 @@
 
 **Production-ready monitoring script templates with StateDirectory pattern**
 
-Stop reinventing the wheel. Start with battle-tested templates for system monitoring scripts with built-in rate-limiting, Prometheus integration, and systemd best practices.
+Stop reinventing the wheel. Start with battle-tested templates for system monitoring scripts with Prometheus integration, systemd best practices, and rate-limited alerting in the two generic templates.
 
 ## Features
 
 - **StateDirectory Pattern**: Persistent state management (alerts survive restarts)
-- **Smart Rate-Limiting**: Prevent alert spam with configurable cooldowns
-- **Prometheus Ready**: Export metrics to Prometheus textfile collector
+- **Smart Rate-Limiting**: Prevent alert spam with configurable cooldowns, in
+  `bash/generic-monitor.sh` and `python/generic-monitor.py`
+- **Prometheus Ready**: Export metrics to Prometheus textfile collector, in all
+  eight templates
 - **systemd Integration**: Service + timer templates with security hardening
-- **Telegram Alerts**: Optional webhook notifications
+- **Telegram Alerts**: Optional webhook notifications, in the two generic
+  templates
 - **Multi-Language**: Bash and Python 3.10+ templates
 - **Device-Agnostic**: Adaptable for different server types via profiles
-- **Zero Dependencies**: Pure Bash/Python stdlib (optional: psutil, requests)
+- **Zero Dependencies**: Pure Bash and Python stdlib, except
+  `python/process-monitor.py`, which requires `psutil`
 
 ## Quick Start
 
@@ -72,6 +76,13 @@ sudo systemctl enable --now disk-monitor.timer
 |----------|---------|
 | `systemd/monitor.service.template` | Service unit with StateDirectory |
 | `systemd/monitor.timer.template` | Timer unit for periodic execution |
+
+> **What the six specialized templates do and do not do.** `disk-monitor.sh`,
+> `service-health-check.sh`, `network-monitor.sh`, `process-monitor.py`,
+> `api-health-check.py` and `database-check.py` export Prometheus metrics and
+> exit with a status code. Alerting, rate-limiting and the `last_alert_*` state
+> files live in `generic-monitor.sh` and `generic-monitor.py`, which is where
+> you copy them from. See [docs/SETUP.md](docs/SETUP.md).
 
 ## Key Concept: StateDirectory vs RuntimeDirectory
 
@@ -157,10 +168,12 @@ ExecStart=/usr/local/bin/node_exporter \
 - Python 3.10+ (for Python templates)
 - systemd
 
+**Required for one template:**
+- psutil (for `process-monitor.py`)
+
 **Optional:**
 - Node Exporter with textfile collector (for Prometheus)
-- Telegram Bot (for alerts)
-- psutil (for process-monitor.py)
+- Telegram Bot (for alerts from the generic templates)
 
 ## Documentation
 
@@ -184,10 +197,11 @@ Ready-to-deploy monitoring stack:
 - Rate-limiting survives service restarts
 - No alert spam after reboot
 
-**Smart Alerting:**
-- Configurable cooldown periods (default: 3 hours)
-- Deduplication via timestamp files
-- Recovery alerts (optional)
+**Smart Alerting** (`generic-monitor.sh` and `generic-monitor.py`)**:**
+- Configurable cooldown periods: `RATE_LIMIT_SECONDS` defaults to 10800 (3
+  hours) in Bash, `ALERT_COOLDOWN` to 21600 (6 hours) in Python
+- Deduplication via `last_alert_*` timestamp files
+- Recovery alerts, switchable in Bash via `ENABLE_RECOVERY_ALERTS`
 
 **Security Hardening:**
 - NoNewPrivileges=true
@@ -224,7 +238,7 @@ Ready-to-deploy monitoring stack:
 
 **1. Production-Ready**
 - Used in real infrastructure (not toy examples)
-- Battle-tested patterns (rate-limiting, state management)
+- Battle-tested patterns (state management, atomic metric writes)
 - Security hardening built-in
 
 **2. Incident-Driven Design**

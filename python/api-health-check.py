@@ -5,7 +5,8 @@
 """
 API Health Check Monitor
 
-Monitors HTTP/HTTPS endpoints and sends alerts on failures.
+Monitors HTTP/HTTPS endpoints and exports the result as Prometheus metrics.
+Alerting is not built in, see generic-monitor.py.
 
 Features:
 - HTTP status code validation

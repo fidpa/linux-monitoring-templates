@@ -5,7 +5,8 @@
 #
 # systemd Service Health Check
 #
-# Monitors systemd service status and sends alerts on failures.
+# Monitors systemd service status and exports the result as Prometheus metrics.
+# Alerting is not built in, see generic-monitor.sh.
 #
 # Features:
 # - Multiple service monitoring

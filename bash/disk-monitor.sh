@@ -5,7 +5,8 @@
 #
 # Disk Usage Monitor
 #
-# Monitors disk usage and sends alerts when thresholds are exceeded.
+# Monitors disk usage and exports the result as Prometheus metrics.
+# Alerting is not built in, see generic-monitor.sh.
 #
 # Features:
 # - Configurable WARNING/CRITICAL thresholds
@@ -17,7 +18,6 @@
 #
 # Environment Variables:
 #   SERVICE_NAME - Service identifier (default: disk-monitor)
-#   DEVICE_NAME - Device name for alerts (default: hostname)
 #   WARNING_THRESHOLD - Warning threshold percentage (default: 80)
 #   CRITICAL_THRESHOLD - Critical threshold percentage (default: 90)
 #   MOUNT_POINT - Mount point to monitor (default: /)

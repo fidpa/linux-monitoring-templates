@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-08-28: Documentation names the two templates that actually alert
+
+Six of the eight templates export Prometheus metrics and nothing else. The
+README, the setup guide and five file headers described them as if they alerted,
+rate-limited and sent Telegram messages. v1.0.1 had already removed that claim
+from five script headers and corrected `docs/SETUP.md`; the README kept it, and
+so did a sixth header nobody had looked at. This release finishes that pass.
+
+### Fixed
+- **The README advertised alerting features for all eight templates**: the
+  tagline, three entries in the feature list, the "Smart Alerting" block and one
+  line under "Why These Templates" now name `generic-monitor.sh` and
+  `generic-monitor.py`, which are the two templates that implement them
+- **Five file headers claimed to send alerts**: `disk-monitor.sh`,
+  `service-health-check.sh`, `network-monitor.sh`, `process-monitor.py` and
+  `api-health-check.py` opened with "sends alerts on failures" or the equivalent.
+  None of them contains a single send call; they export metrics and exit with a
+  status code, which is what the headers now say
+- **`process-monitor.py` still listed "Smart rate-limiting" as a feature**: the
+  same claim v1.0.1 removed from five other headers. It has no rate-limiting
+  code
+- **`docs/SETUP.md` exempted three templates where six apply**: the note named
+  the specialized Bash monitors only, leaving `process-monitor.py`,
+  `api-health-check.py` and `database-check.py` looking as though they alert
+- **The advertised cooldown default was right for one of the two generics**:
+  the README said three hours. `RATE_LIMIT_SECONDS` in `generic-monitor.sh`
+  defaults to 10800 seconds, `ALERT_COOLDOWN` in `generic-monitor.py` to 21600
+- **`psutil` was listed as optional**: `process-monitor.py` imports it at module
+  level and cannot run without it. The README also listed `requests`, which no
+  template imports; all HTTP calls use `urllib.request` from the standard
+  library
+- **`disk-monitor.sh` documented an environment variable for a feature it does
+  not have**: `DEVICE_NAME - Device name for alerts`. The variable itself is
+  unchanged, see the upgrade note
+
+### Upgrade notes
+- **No template changed its behaviour.** This release corrects documentation and
+  file headers; every threshold, metric name, exit code and environment variable
+  works exactly as it did in v1.3.2
+- **`DEVICE_NAME` is set but unused in all six specialized templates.** Only
+  `generic-monitor.sh` and `generic-monitor.py` read it, for `TELEGRAM_PREFIX`.
+  Setting it on the others has never had an effect. It is left in place because
+  it is the variable you need once you copy the alerting in; removing it is a
+  separate decision
+
+### Technical Details
+- **Scope**: 8 files (README, `docs/SETUP.md`, three Bash templates, two Python
+  templates, CHANGELOG)
+- **Quality**: ShellCheck (`--severity=error`), Ruff against the pinned rule set,
+  `bash -n`, `py_compile`, `yamllint` and `gitleaks dir` all clean
+
 ## [1.3.2] - 2026-08-28: Release notes match the tags they are published under
 
 The release pages of this repository carried less than the changelog did. Two of
@@ -278,6 +329,7 @@ the tree it describes.
 
 ---
 
+[1.3.3]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.2.0...v1.3.0

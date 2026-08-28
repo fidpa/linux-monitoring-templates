@@ -5,7 +5,8 @@
 #
 # Network Connectivity Monitor
 #
-# Monitors network connectivity via ping and sends alerts on failures.
+# Monitors network connectivity via ping and exports the result as Prometheus
+# metrics. Alerting is not built in, see generic-monitor.sh.
 #
 # Features:
 # - Multiple target monitoring (DNS, Gateway, External)
