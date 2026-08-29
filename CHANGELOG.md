@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-08-30: The README describes the templates that are actually in the repository
+
+The README was measured against the eight scripts and two unit templates line by
+line. Three claims did not hold, the configuration section covered 5 of 31
+environment variables, and the prose carried the marketing that the quality
+standard for these repositories rules out. Nothing outside `README.md` changed:
+no template, no unit file, no default.
+
+### Fixed
+
+- **The feature list advertised device profiles that no script reads.**
+  `grep -rn profile bash/ python/ systemd/ examples/` returns nothing; the
+  hostname-to-configuration pattern lives in `docs/DEVICE_PROFILES.md` as a
+  recipe you implement yourself. The README now says so instead of listing it
+  as a capability.
+- **The example threshold contradicted the template default.** The
+  configuration block showed `WARNING_THRESHOLD=75` while `bash/disk-monitor.sh`
+  defaults to `80`; 75 is the default of `python/generic-monitor.py`. Anyone
+  copying the block set a value they believed was already in effect.
+- **The status gauge scale was stated as if it were universal.** `0=OK,
+  1=WARNING, 2=CRITICAL` holds for six templates. `bash/disk-monitor.sh` also
+  emits `3=UNKNOWN` and `python/database-check.py` only ever reports 0 or 2,
+  both of them documented in their own `# HELP` lines and neither of them in the
+  README.
+- **A pointer aimed at the wrong place.** The note on adding alerting to a
+  specialized template pointed at the header of `bash/disk-monitor.sh`; the
+  comment naming `send_telegram_alert` sits in its check function
+  (`bash/disk-monitor.sh:135`).
+
+### Changed
+
+- **Configuration is three tables instead of a five-line example.** The scripts
+  read 31 environment variables: 29 configuration settings plus
+  `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` from the secrets file. The README
+  showed five. Newly documented are `LOCK_DIR`, `SECRETS_FILE`,
+  `ENABLE_RECOVERY_ALERTS`, `RECOVERY_THRESHOLD`, `REBOOT_GRACE_PERIOD` and
+  every variable of the six specialized templates, each with the default as it
+  stands in the code.
+- **Claims carry their evidence.** The Bash 4.0 requirement names the `${VAR^^}`
+  expansion in `bash/generic-monitor.sh:46`, the atomic write names `mv -f` and
+  `os.replace()`, the security hardening lists the four directives and the
+  actual `ReadWritePaths=` of the unit template, and the `Templates-10` badge
+  explains itself as eight scripts plus two unit files.
+- **A section states what the repository is not**: starting points rather than a
+  framework, two of eight scripts alerting, linted by ShellCheck and Ruff with
+  no test suite and the systemd behaviour verified by hand, device profiles as a
+  recipe, and no aggregation, dashboards or alert routing.
+- **The marketing is gone.** "Stop reinventing the wheel", "battle-tested",
+  "Production-Ready" and "Used in real infrastructure" are removed; the
+  StateDirectory section explains the failure it prevents instead of announcing
+  it in a "Problem / Why / Solution" scaffold; and the "Use Cases" list no
+  longer implies queue length tracking, centralized alerting or Prometheus
+  dashboards that the templates do not provide.
+
+### Technical Details
+
+- **Impact**: Documentation only. No template, unit file, default value, metric
+  name or exit code changed; a copied template behaves exactly as it did in
+  v1.3.4.
+- **Scope**: `README.md`, 190 insertions, 132 deletions.
+- **Quality**: `README.md` is pure ASCII (the two `WRONG`/`CORRECT` emoji are
+  replaced by the words), every relative link resolves, and the Claudish marker
+  search of `docs/conventions/README_QUALITY_STANDARDS.md` returns nothing.
+
 ## [1.3.4] - 2026-08-28: GitHub identifies the project as MIT-licensed
 
 ### Changed
@@ -340,6 +404,7 @@ the tree it describes.
 
 ---
 
+[1.3.5]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/fidpa/linux-monitoring-templates/compare/v1.3.1...v1.3.2
